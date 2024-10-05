@@ -1,0 +1,6 @@
+.vscode/
+.cache/
+Build/
+Intermediate/
+compile_commands.json
+LogFile.txt
