@@ -33,3 +33,24 @@ FVector2 FGetMousePos() {
 void FSetMousePos(FVector2 NewPosition) {
   GEngine.windowApi.OnSetCursorPos((uint32)NewPosition.x, (uint32)NewPosition.y);
 }
+
+FVector2 FGetMouseScreenPos() {
+  FVector2 screenPos = VEC2_ZERO;
+  FVector2 mousePos = FGetMousePos();
+  FVector2 windowSize = FGetWindowSize();
+  FVector2 screenSize = FGetScreenSize();
+
+  screenPos.x = (mousePos.x / windowSize.x) * screenSize.x;
+  screenPos.y = (mousePos.y / windowSize.y) * screenSize.y;
+
+  return screenPos;
+}
+
+void FSetMouseScreenPos(FVector2 NewPosition) {
+  FVector2 mousePos = VEC2_ZERO;
+  FVector2 windowSize = FGetWindowSize();
+  FVector2 screenSize = FGetScreenSize();
+
+  mousePos.x = (NewPosition.x / screenSize.x) * windowSize.x;
+  mousePos.y = (NewPosition.y / screenSize.y) * windowSize.y;
+}

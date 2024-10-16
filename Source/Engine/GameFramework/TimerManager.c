@@ -5,11 +5,11 @@ void FTimerUpdate(float DeltaTime) {
   // Call timers update
 }
 
-double FTimerGetDeltaTime() {
+double FGetDeltaTime() {
   return GEngine.timerApi.deltaTime;
 }
 
-uint32 FTimerGetFrameRate() {
+uint32 FGetFrameRate() {
   return GEngine.timerApi.frameRate;
 }
 

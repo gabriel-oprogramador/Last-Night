@@ -4,9 +4,20 @@
 #include "GT/Platform.h"
 #include "GL/ApiGL.h"
 #include "GT/Engine.h"
+#include "GameFramework.h"
+
+#define DEFAULT_TEXTURE_SIZE 32
 
 static FShader SDefaultShader = 0;
+static FMat4 SPerspectiveMatrix;
+static FMat4 SOrthographicMatrix;
+static struct {
+  uint32 uProjID;
+  uint32 uModelID;
+  uint32 uColorID;
+} SPrimitiveInfo;
 
+static void InternalDrawPrimitive(FPrimitive Primitive, FVector3 Location, FVector3 Scale, FColor Color);
 static FPrimitive InternalCreateQuad();
 static FPrimitive InternalCreateCircle();
 
@@ -14,34 +25,52 @@ static cstring SDefaultVertSource =
     "#version 330 core\n"
     "layout(location = 0) in vec3 aVertPos;\n"
     "layout(location = 1) in vec2 aTexCoord;\n"
+    "uniform mat4 uProj;\n"
+    "uniform mat4 uModel;\n"
     "out vec2 vTexCoord;\n"
     "void main(){\n"
-    " gl_Position = vec4(aVertPos, 1);\n"
+    " gl_Position = uProj * uModel * vec4(aVertPos, 1);\n"
     " vTexCoord = aTexCoord;\n"
     "}";
 
 static cstring SDefaultFragSource =
     "#version 330 core\n"
-    "uniform vec4 uColor = vec4(1.0, 0.0, 1.0, 1.0);\n"
+    "uniform vec4 uColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
+    "uniform sampler2D uMainTex;\n"
     "in vec2 vTexCoord;\n"
-    "out vec4 fragColor;\n"
     "vec4 finalColor;\n"
+    "out vec4 fragColor;\n"
     "void main() {\n"
-    " fragColor = uColor;\n"
+    " finalColor = uColor * texture(uMainTex, vTexCoord);\n"
+    " if (finalColor.a < 0.2)\n"
+    "   discard;\n"
+    " fragColor = finalColor;"
     "}";
 
 void FRendererInitialize(ERendererApi Renderer) {
   bool bGraphic = false;
   switch(Renderer) {
-    case OPENGL_VERSION_3_3: bGraphic = GEngine.graphicApi.OnInitOpenGL(3, 3); break;
-    case OPENGL_VERSION_4_5: bGraphic = GEngine.graphicApi.OnInitOpenGL(4, 5); break;
-    case OPENGL_VERSION_4_6: bGraphic = GEngine.graphicApi.OnInitOpenGL(4, 6); break;
+    case E_OPENGL_VERSION_3_3: bGraphic = GEngine.graphicApi.OnInitOpenGL(3, 3); break;
+    case E_OPENGL_VERSION_4_5: bGraphic = GEngine.graphicApi.OnInitOpenGL(4, 5); break;
+    case E_OPENGL_VERSION_4_6: bGraphic = GEngine.graphicApi.OnInitOpenGL(4, 6); break;
   }
-  if(bGraphic == false){
+
+  if(bGraphic == false) {
     GT_LOG(LOG_FATAL, "API-GL: Uninitialized!");
     return;
   }
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
   SDefaultShader = FShaderCreate(SDefaultVertSource, SDefaultFragSource);
+
+  glUseProgram(SDefaultShader);
+  SPrimitiveInfo.uProjID = glGetUniformLocation(SDefaultShader, "uProj");
+  SPrimitiveInfo.uModelID = glGetUniformLocation(SDefaultShader, "uModel");
+  SPrimitiveInfo.uColorID = glGetUniformLocation(SDefaultShader, "uColor");
+  glUseProgram(0);
+
   GT_LOG(LOG_INFO, "API-GL: Created Default Shader Program");
 }
 
@@ -49,7 +78,7 @@ void FRendererTerminate() {
 }
 
 void FSetClearColor(FColor Color) {
-    glClearColor(FCOLOR_GL(Color));
+  glClearColor(FCOLOR_GL(Color));
 }
 
 void FClearBuffers() {
@@ -60,7 +89,25 @@ void FSetViewport(FRect Viewport) {
   glViewport(Viewport.x, Viewport.y, Viewport.width, Viewport.height);
 }
 
+FMat4 FGetProjection(EProjectioType Projection) {
+  static bool bValid = false;
+  if(bValid == false) {
+    SPerspectiveMatrix = FMat4MakePerspective(60, 1.7777, -1, 100.f);
+    FRect screen = FGetScreenSpace();
+    SOrthographicMatrix = FMat4MakeOrthographic(screen.x, screen.width, screen.y, screen.height, -10000, 10000.f);
+  }
+
+  switch(Projection) {
+    case E_PROJECTION_PERSPECTIVE: return SPerspectiveMatrix; break;
+    case E_PROJECTION_ORTHOGRAPHIC: return SOrthographicMatrix; break;
+  }
+}
+
 // Shader Program
+FShader FShaderDefault() {
+  return SDefaultShader;
+}
+
 FShader FShaderCreate(cstring VertexSource, cstring FragmentSource) {
   char logBuffer[BUFFER_LOG_SIZE] = {""};
   uint32 vertexShader, fragmentShader, shaderProgram;
@@ -125,7 +172,7 @@ FShader FShaderLoad(cstring VertexPath, cstring FragmentPath) {
   }
 
   if(!PReadTextFile(FragmentPath, &fsBuffer, NULL, 0)) {
-    GT_LOG(LOG_ALERT, "Fragment Shader did not load!");
+    GT_LOG(LOG_ALERT, "API-GL: Fragment Shader did not load!");
     PMemFree(vsBuffer);
     return SDefaultShader;
   }
@@ -136,11 +183,11 @@ FShader FShaderLoad(cstring VertexPath, cstring FragmentPath) {
   PMemFree(fsBuffer);
 
   if(shaderProgram == SDefaultShader) {
-    GT_LOG(LOG_INFO, "API:GL Use Default Shader Program");
+    GT_LOG(LOG_INFO, "API-GL: Use Default Shader Program");
     return SDefaultShader;
   }
 
-  GT_LOG(LOG_INFO, "API:GL Loaded Shader Program => %s | %s", vs, fs);
+  GT_LOG(LOG_INFO, "API-GL: Loaded Shader Program => %s | %s", vs, fs);
   return shaderProgram;
 }
 
@@ -151,20 +198,156 @@ void FShaderFree(FShader Shader) {
 FPrimitive FGetPrimitive(EPrimitiveShape Shape) {
   FPrimitive retVal = {0};
   switch(Shape) {
-    case PS_QUAD: retVal = InternalCreateQuad(); break;
-    case PS_CIRCLE: retVal = InternalCreateCircle(); break;
+    case E_SHAPE_QUAD: retVal = InternalCreateQuad(); break;
+    case E_SHAPE_CIRCLE: retVal = InternalCreateCircle(); break;
   }
 
   return retVal;
 }
 
-void FDrawPrimitive(FPrimitive Primitive, FColor Color) {
+FTexture FTextureLoadFile(cstring AssetPath) {
+  if(AssetPath == NULL) {
+    return FTextureDefault();
+  }
+
+  FImage* image = FImageLoadFile(AssetPath);
+  FTexture txd = {
+      .id = 0,
+      .width = image->width,
+      .height = image->height,
+      .format = image->format,
+      .mipmap = 1,
+  };
+
+  glGenTextures(1, &txd.id);
+  glBindTexture(GL_TEXTURE_2D, txd.id);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+  GLenum format = txd.format == 4 ? GL_RGBA : GL_RGB;
+  glTexImage2D(GL_TEXTURE_2D, 0, format, txd.width, txd.height, 0, format, GL_UNSIGNED_BYTE, image->data);
+  glGenerateMipmap(GL_TEXTURE_2D);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  FImageUnload(image);
+  return txd;
+}
+
+void FTextureUnload(FTexture Texture) {
+  glDeleteTextures(1, &Texture.id);
+}
+
+FTexture FTextureDefault() {
+  static FTexture texture = {0};
+  static bool bValid = false;
+  if(bValid) {
+    return texture;
+  }
+
+  const uchar grayLight[3] = {200, 200, 200};
+  const uchar grayDark[3] = {100, 100, 100};
+
+  uchar checkerboard[32 * 32 * 3];
+
+  for(int32 y = 0; y < 32; ++y) {
+    for(int32 x = 0; x < 32; ++x) {
+      int32 index = (y * 32 + x) * 3;
+      if(((x / 8) % 2) == ((y / 8) % 2)) {
+        checkerboard[index] = grayLight[0];
+        checkerboard[index + 1] = grayLight[1];
+        checkerboard[index + 2] = grayLight[2];
+      } else {
+        checkerboard[index] = grayDark[0];
+        checkerboard[index + 1] = grayDark[1];
+        checkerboard[index + 2] = grayDark[2];
+      }
+    }
+  }
+
+  GLuint textureID;
+  glGenTextures(1, &textureID);
+  glBindTexture(GL_TEXTURE_2D, textureID);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 32, 32, 0, GL_RGB, GL_UNSIGNED_BYTE, checkerboard);
+
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  texture.id = textureID;
+  texture.width = DEFAULT_TEXTURE_SIZE;
+  texture.height = DEFAULT_TEXTURE_SIZE;
+  texture.format = 3;
+  texture.mipmap = 1;
+
+  return texture;
+}
+
+FTexture FTextureWhite() {
+  static bool bValid = false;
+  static FTexture texture = {0};
+
+  if(bValid == true) {
+    return texture;
+  }
+
+  GLuint textureID;
+  glGenTextures(1, &textureID);
+
+  glBindTexture(GL_TEXTURE_2D, textureID);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+  uchar whiteTextureData[4] = {255, 255, 255, 255};
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, whiteTextureData);
+
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  texture.id = textureID;
+  texture.width = 1;
+  texture.height = 1;
+  texture.format = 4;
+  texture.mipmap = 1;
+  bValid = true;
+
+  return texture;
+}
+
+static void InternalDrawPrimitive(FPrimitive Primitive, FVector3 Location, FVector3 Scale, FColor Color) {
   glUseProgram(SDefaultShader);
-  glUniform4fv(Primitive.uColorID, 1, (const float*)&Color);
+
+  FMat4 mTransform = FMat4MakeTranslation(Location);
+  FMat4 mScale = FMat4MakeScale(Scale);
+  FMat4 mModel = FMat4Mul(mTransform, mScale);
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, FTextureWhite().id);
+  glUniform4fv(SPrimitiveInfo.uColorID, 1, (const float*)&Color);
+  glUniformMatrix4fv(SPrimitiveInfo.uProjID, 1, GL_FALSE, (const float*)FGetProjection(E_PROJECTION_ORTHOGRAPHIC).e);
+  glUniformMatrix4fv(SPrimitiveInfo.uModelID, 1, GL_FALSE, (const float*)mModel.e);
+
   glBindVertexArray(Primitive.objectID);
   glDrawElements(GL_TRIANGLES, Primitive.indices, GL_UNSIGNED_INT, NULL);
   glBindVertexArray(0);
   glUseProgram(0);
+}
+
+void FDrawCircle(FVector3 Location, FVector3 Scale, FColor Color) {
+  FPrimitive circle = FGetPrimitive(E_SHAPE_CIRCLE);
+  InternalDrawPrimitive(circle, Location, Scale, Color);
+}
+
+void FDrawQuad(FVector3 Location, FVector3 Scale, FColor Color) {
+  FPrimitive quad = FGetPrimitive(E_SHAPE_QUAD);
+  InternalDrawPrimitive(quad, Location, Scale, Color);
 }
 
 // Intenal Functions
@@ -208,8 +391,7 @@ static FPrimitive InternalCreateQuad() {
   bCreated = true;
   primitive.objectID = VAO;
   primitive.indices = 6;
-  primitive.shape = PS_QUAD;
-  primitive.uColorID = glGetUniformLocation(SDefaultShader, "uColor");
+  primitive.shape = E_SHAPE_QUAD;
 
   return primitive;
 }
@@ -274,8 +456,7 @@ static FPrimitive InternalCreateCircle() {
   bCreated = true;
   primitive.objectID = VAO;
   primitive.indices = SEGMENTS * 3;
-  primitive.shape = PS_CIRCLE;
-  primitive.uColorID = glGetUniformLocation(SDefaultShader, "uColor");
+  primitive.shape = E_SHAPE_CIRCLE;
 
   return primitive;
 }

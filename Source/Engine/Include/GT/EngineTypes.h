@@ -12,21 +12,62 @@ typedef const char* cstring;
 typedef uint32 FShader;
 
 typedef enum {
-  OPENGL_VERSION_3_3,
-  OPENGL_VERSION_4_5,
-  OPENGL_VERSION_4_6,
+  LOG_INFO = (1 << 0),
+  LOG_SUCCESS = (1 << 1),
+  LOG_WARNING = (1 << 2),
+  LOG_ERROR = (1 << 3),
+  LOG_FATAL = (1 << 4),
+  LOG_ALERT = (1 << 5),
+} ELogLevel;
+
+typedef enum {
+  E_OPENGL_VERSION_3_3,
+  E_OPENGL_VERSION_4_5,
+  E_OPENGL_VERSION_4_6,
 } ERendererApi;
 
 typedef enum {
-  PS_QUAD,
-  PS_CIRCLE,
+  E_PROJECTION_PERSPECTIVE,
+  E_PROJECTION_ORTHOGRAPHIC,
+} EProjectioType;
+
+typedef enum {
+  E_ANCHOR_CENTER_CENTER,
+  E_ANCHOR_LEFT_TOP,
+  E_ANCHOR_LEFT_CENTER,
+  E_ANCHOR_LEFT_BOTTOM,
+  E_ANCHOR_RIGHT_TOP,
+  E_ANCHOR_RIGHT_CENTER,
+  E_ANCHOR_RIGHT_BOTTOM,
+  E_ANCHOR_TOP_CENTER,
+  E_ANCHOR_BOTTOM_CENTER,
+} EAnchorType;
+
+typedef enum {
+  E_WORLD_STATIC,
+  E_WORLD_DYNAMIC,
+  E_WORLD_PROJECTILE,
+  E_WORLD_MAX_TYPE
+} EWorldType;
+
+typedef enum{
+  E_COLLISION_NONE = (1 << 0),
+  E_COLLISION_OVERLAP = (1 << 1),
+  E_COLLISION_BLOCK = (1 << 2),
+} ECollisionChannel;
+
+typedef enum {
+  E_SHAPE_QUAD,
+  E_SHAPE_CIRCLE,
 } EPrimitiveShape;
 
 typedef enum {
-  WINDOW_MODE_FIXED,
-  WINDOW_MODE_RESIZABLE,
-  WINDOW_MODE_FULLSCREEN,
+  E_WINDOW_MODE_FIXED,
+  E_WINDOW_MODE_RESIZABLE,
 } EWindowMode;
+
+// Use an array of enums for each Game!
+typedef const char* FTag;
 
 typedef struct {
   int32 width;
@@ -44,42 +85,12 @@ typedef struct {
   EWindowMode windowMode;
 } FWindow;
 
-typedef enum {
-  IM_GAME_ONLY,
-  IM_UI_ONLY,
-  IM_GAME_UI,
-  IM_EDITOR_ONLY
-} EInputMode;
-
-typedef enum {
-  LOG_INFO = (1 << 0),
-  LOG_SUCCESS = (1 << 1),
-  LOG_WARNING = (1 << 2),
-  LOG_ERROR = (1 << 3),
-  LOG_FATAL = (1 << 4),
-  LOG_ALERT = (1 << 5),
-} ELogLevel;
-
-typedef struct {
-  EPrimitiveShape shape;
-  uint32 uColorID;
-  uint32 objectID;
-  uint32 indices;
-} FPrimitive;
-
 typedef struct {
   float r;
   float g;
   float b;
   float a;
 } FColor;
-
-typedef struct {
-  float x;
-  float y;
-  float width;
-  float height;
-} FRect;
 
 typedef struct {
   float x;
@@ -110,6 +121,40 @@ typedef struct {
 typedef struct {
   float e[4][4];
 } FMat4;
+
+typedef struct {
+  float x;
+  float y;
+  float width;
+  float height;
+} FRect;
+
+typedef struct {
+  EPrimitiveShape shape;
+  uint32 objectID;
+  uint32 indices;
+} FPrimitive;
+
+typedef struct {
+  char* data;
+  int32 width;
+  int32 height;
+  int32 format;
+} FImage;
+
+typedef struct {
+  uint32 id;
+  int32 width;
+  int32 height;
+  int32 format;
+  int32 mipmap;
+} FTexture;
+
+typedef struct {
+  EAnchorType type;
+  FVector3 offset;
+  FVector3 location;
+} FAnchor;
 
 typedef enum {
   KEY_APOSTROPHE,            // Key: '

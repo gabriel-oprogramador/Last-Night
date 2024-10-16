@@ -118,9 +118,6 @@ void ApiWin32CreateWindow(int32 Width, int32 Height, cstring Title, uint32 Mode)
   GEngine.mainWindow.height = Height;
   GEngine.mainWindow.title = Title;
   GEngine.mainWindow.bShouldClose = false;
-  GEngine.mainWindow.bFullscreen = false;
-  GEngine.mainWindow.bShowCursor = true;
-  GEngine.mainWindow.bCursorCaptured = false;
   GEngine.mainWindow.pWindow = (void*)hWin;
   GEngine.mainWindow.pDevice = (void*)SApiUser.GetDC(hWin);
   GEngine.mainWindow.pContext = NULL;
@@ -180,10 +177,10 @@ void ApiWin32SetWindowMode(uint32 WindowMode) {
   LONG_PTR flag = WS_VISIBLE;
 
   switch(WindowMode) {
-    case WINDOW_MODE_FIXED: {
+    case E_WINDOW_MODE_FIXED: {
       flag |= WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
     } break;
-    case WINDOW_MODE_RESIZABLE: {
+    case E_WINDOW_MODE_RESIZABLE: {
       flag |= WS_OVERLAPPEDWINDOW;
       SApiUser.SetWindowLongPtrA(win, GWL_STYLE, flag);
     } break;
@@ -253,6 +250,7 @@ static LRESULT InternalWinProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam
       GEngine.mainWindow.width = LOWORD(lParam);
       GEngine.mainWindow.height = HIWORD(lParam);
       if(GEngine.mainWindow.pContext != NULL) {
+        /*FRect viewport = {0, 0, 1280.f, 1280/1.7777f};*/
         FRect viewport = {0, 0, LOWORD(lParam), HIWORD(lParam)};
         FSetViewport(viewport);
       }

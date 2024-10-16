@@ -52,6 +52,21 @@ ENGINE_API void EnginePrintLog(ELogLevel Level, cstring FuncName, cstring Contex
 #endif
 
 // clang-format off
+#define VEC3_ZERO             CLITERAL(FVector3){0.f, 0.f, 0.f}
+#define VEC3_ONE              CLITERAL(FVector3){1.f, 1.f, 1.f}
+#define VEC3_VALUE(V)         CLITERAL(FVector3){V, V, V}
+#define VEC3(X, Y, Z)         CLITERAL(FVector3){X, Y, Z}
+
+#define VEC2_ZERO             CLITERAL(FVector2){0.f, 0.f}
+#define VEC2_ONE              CLITERAL(FVector2){1.f, 1.f}
+#define VEC2_VALUE(V)         CLITERAL(FVector2){V, V}
+#define VEC2(X, Y)            CLITERAL(FVector2){X, Y}
+
+#define ROT_ZERO              CLITERAL(FRotator){0.f, 0.f, 0.f}
+#define ROT_ONE               CLITERAL(FRotator){1.f, 1.f, 1.f}
+#define ROT_VALUE(V)          CLITERAL(FRotator){V, V, V}
+#define ROT(Pitch, Yaw, Roll) CLITERAL(FRotator){Pitch, Yaw, Roll}
+
 // Red
 #define COLOR_RED            CLITERAL(FColor){ 1.0f, 0.0f, 0.0f, 1.0f }
 #define COLOR_RED_LIGHT      CLITERAL(FColor){ 1.0f, 0.5f, 0.5f, 1.0f }

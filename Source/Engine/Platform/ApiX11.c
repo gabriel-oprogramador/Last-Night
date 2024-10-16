@@ -275,7 +275,7 @@ void ApiX11SetWindowMode(uint32 Mode) {
   int32 height = GEngine.mainWindow.height;
 
   switch(Mode) {
-    case WINDOW_MODE_FIXED: {
+    case E_WINDOW_MODE_FIXED: {
       SWindowInfo.sizeHints.flags = PMinSize | PMaxSize;
       SWindowInfo.sizeHints.min_width = width;
       SWindowInfo.sizeHints.max_width = width;
@@ -283,7 +283,7 @@ void ApiX11SetWindowMode(uint32 Mode) {
       SWindowInfo.sizeHints.max_height = height;
       SApiX11.XSetWMNormalHints(SWindowInfo.dpy, SWindowInfo.win, &SWindowInfo.sizeHints);
     } break;
-    case WINDOW_MODE_RESIZABLE: {
+    case E_WINDOW_MODE_RESIZABLE: {
       SWindowInfo.sizeHints.flags = 0;
       SApiX11.XSetWMNormalHints(SWindowInfo.dpy, SWindowInfo.win, &SWindowInfo.sizeHints);
     } break;

@@ -8,7 +8,7 @@ USE_CLANG = true
 CONFIG_DIR = $(abspath Config/)
 CONTENT_DIR = $(abspath Content/)
 
-INCLUDES = -ISource/Engine -ISource/Engine/Include -ISource/Engine/Game -ISource/Game/Include
+INCLUDES = -ISource/Engine -ISource/Engine/Include -ISource/Engine/Game -ISource/Game/Include -ISource/Engine/Include/ThirdParty
 DEFINES = -DGAME_NAME=$(GAME) -DRENDERER_OPENGL
 FLAGS =
 KIND =

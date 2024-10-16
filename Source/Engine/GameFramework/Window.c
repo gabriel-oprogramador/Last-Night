@@ -2,11 +2,13 @@
 #include "GT/Engine.h"
 #include "GT/Renderer.h"
 
+static FRect SScreeSpace = {.x = 0, .y = 0, .width = 1920, .height = 1080};
+
 void FInitWindow(int32 Width, int32 Height, cstring Title) {
   if(GEngine.mainWindow.pWindow != NULL) {
     return;
   }
-  uint32 mode = WINDOW_MODE_FIXED;
+  uint32 mode = E_WINDOW_MODE_FIXED;
   GEngine.windowApi.OnCreate(Width, Height, Title, mode);
   GEngine.graphicApi.OnCreateContext();
   GEngine.graphicApi.OnMakeCurrent();
@@ -17,11 +19,11 @@ void FInitWindow(int32 Width, int32 Height, cstring Title) {
 }
 
 void FCloseWindow() {
-  if(GEngine.mainWindow.pWindow == NULL){
+  if(GEngine.mainWindow.pWindow == NULL) {
     return;
   }
   GEngine.windowApi.OnDestroy();
-  if(GEngine.mainWindow.pContext){
+  if(GEngine.mainWindow.pContext) {
     GEngine.graphicApi.OnDestroyContext();
   }
   FEngineShutdown();
@@ -51,4 +53,20 @@ EWindowMode FGetWindowMode() {
 void FToggleFullscreen() {
   bool bFullscreen = !GEngine.mainWindow.bFullscreen;
   GEngine.windowApi.OnSetFullscreen(bFullscreen);
+}
+
+FRect FGetScreenSpace() {
+  return SScreeSpace;
+}
+
+FVector2 FGetScreenSize() {
+  return (FVector2){.x = SScreeSpace.width, .y = SScreeSpace.height};
+}
+
+float FGetScreenWidth() {
+  return SScreeSpace.width;
+}
+
+float FGetScreenHeight() {
+  return SScreeSpace.height;
 }
