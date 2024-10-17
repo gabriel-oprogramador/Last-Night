@@ -41,27 +41,46 @@ void USpriteUpdateArena() {
 
     if(spr->id == -1) { continue; }
 
-    if(spr->bAnimation == true) {
+    if(spr->bAnimation) {
       animator->elapsedTime += dt;
+
       if(animator->elapsedTime >= animator->frameTime) {
         animator->currentFrame++;
-        if(animator->currentFrame >= animator->totalFrames) {
-          animator->currentFrame = 0;
-        }
         animator->elapsedTime = 0.f;
+
+        if(animator->currentFrame >= animator->totalFrames) {
+          if(animator->bLoop) {
+            animator->currentFrame = 0;
+          } else {
+            animator->currentFrame = animator->totalFrames - 1;
+          }
+        }
       }
     }
 
     if(transform->bDirty) {
+      FVector3 newLocation = FVector3Add(spr->transform.location, spr->movement.velocity);
+      FVector3 direction = (FVector3Length(spr->movement.velocity) > 0.f) ? FVector3Normalize(spr->movement.velocity) : spr->movement.direction;
+      USpriteSetLocation(spr, newLocation);
+
+      if(spr->bInvertible) {
+        FVector3 scale = FVector3Abs(spr->transform.scale);
+        spr->transform.scale.x = scale.x * (direction.x >= 0 ? 1.f : -1.f);
+        spr->transform.scale.y = scale.y * (direction.y >= 0 ? 1.f : -1.f);
+        spr->transform.scale.z = 1.f;
+      }
+
       finalScale.x = spr->transform.scale.x * spr->animator.frameWidth;
       finalScale.y = spr->transform.scale.y * spr->animator.frameHeight;
-
       finalLocation = spr->anchor.location;
+
       FMat4 mTransform = FMat4MakeTranslation(finalLocation);
       FMat4 mRotation = FMat4MakeRotation(transform->rotation);
       FMat4 mScale = FMat4MakeScale(finalScale);
       transform->model = FMat4Mul(mTransform, FMat4Mul(mRotation, mScale));
       spr->collider.location = FVector3Add(spr->anchor.location, spr->collider.offset);
+      spr->movement.direction = direction;
+      spr->movement.velocity = VEC3_ZERO;
       transform->bDirty = false;
     }
   }
@@ -156,7 +175,7 @@ void USpriteRenderArena() {
 void USpriteDestroyArena() {
 }
 
-uint32 USpriteAdd(USprite* Self) {
+USprite* USpriteAdd(USprite* Self) {
   uint32 index = 0;
   if(SSpriteManager.numfreeSlots > 0) {
     index = SSpriteManager.freeList[--SSpriteManager.numfreeSlots];
@@ -164,16 +183,25 @@ uint32 USpriteAdd(USprite* Self) {
     index = SSpriteManager.numSprites++;
   } else {
     GT_LOG(LOG_ALERT, "Full USprite Arena Max size is %d", MAX_ARENA_SIZE);
-    return index;
+    return NULL;
   }
 
   USprite* ptr = &SSpriteManager.sprites[index];
   PMemCopy(ptr, Self, sizeof(USprite));
   ptr->id = index;
-  return index;
+  return ptr;
 }
 
-void USpriteRemove(uint32 SpriteID) {
+void USpriteRemove(USprite* Self) {
+  int32 id = Self->id;
+  if(id > 0 && id < SSpriteManager.numSprites) {
+    SSpriteManager.freeList[SSpriteManager.numfreeSlots++] = id;
+    SSpriteManager.sprites[id] = (USprite){0};
+    SSpriteManager.sprites[id].id = -1;
+  }
+}
+
+void USpriteRemoveID(int32 SpriteID) {
   if(SpriteID > 0 && SpriteID < SSpriteManager.numSprites) {
     SSpriteManager.freeList[SSpriteManager.numfreeSlots++] = SpriteID;
     SSpriteManager.sprites[SpriteID] = (USprite){0};
@@ -181,7 +209,7 @@ void USpriteRemove(uint32 SpriteID) {
   }
 }
 
-USprite* USpriteGet(uint32 SpriteID) {
+USprite* USpriteGet(int32 SpriteID) {
   if(SpriteID < 0 && SpriteID >= MAX_ARENA_SIZE) {
     GT_LOG(LOG_ERROR, "USprite Index invalid");
     return NULL;
@@ -208,6 +236,16 @@ USprite USpriteCreate(cstring TexturePath) {
   self.transform.bDirty = true;
   self.bHidden = false;
   self.bAnimation = false;
+  self.movement.velocity = VEC3_ZERO;
+  self.movement.direction = VEC3(1, 0, 0);
+  self.movement.maxSpeed = 300.f;
+  self.animator.currentFrame = 0;
+  self.animator.currentRow = 0;
+  self.animator.totalFrames = 1;
+  self.animator.totalRows = 1;
+  self.animator.bLoop = true;
+  self.animator.frameTime = 0.f;
+  self.animator.elapsedTime = 0.f;
   USpriteLoadTexture(&self, TexturePath);
   return self;
 }
@@ -377,4 +415,16 @@ bool USpriteIsCollisionPointer(USprite* Self, FVector2 Pointer) {
   }
 
   return false;
+}
+
+void USpriteAddMovement(USprite* Self, FVector3 Direction) {
+  Direction = FVector3Normalize(Direction);
+  FVector3 velocity = FVector3MulS(Direction, Self->movement.maxSpeed * FGetDeltaTime());
+  velocity = FVector3Add(Self->movement.velocity, velocity);
+  Self->movement.velocity = FVector3ClampLength(velocity, 0.f, Self->movement.maxSpeed);
+  Self->transform.bDirty = true;
+}
+
+void USpriteStopMovement(USprite* Self){
+  Self->movement.velocity = VEC3_ZERO;
 }

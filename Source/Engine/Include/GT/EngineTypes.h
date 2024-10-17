@@ -46,6 +46,7 @@ typedef enum {
 typedef enum {
   E_WORLD_STATIC,
   E_WORLD_DYNAMIC,
+  E_WORLD_SCREEN,
   E_WORLD_PROJECTILE,
   E_WORLD_MAX_TYPE
 } EWorldType;
@@ -65,9 +66,6 @@ typedef enum {
   E_WINDOW_MODE_FIXED,
   E_WINDOW_MODE_RESIZABLE,
 } EWindowMode;
-
-// Use an array of enums for each Game!
-typedef const char* FTag;
 
 typedef struct {
   int32 width;

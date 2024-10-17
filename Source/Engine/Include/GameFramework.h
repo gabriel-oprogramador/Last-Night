@@ -36,6 +36,10 @@ ENGINE_API float FGetScreenHeight();
 ENGINE_API FImage* FImageLoadFile(cstring AssetPath);
 ENGINE_API void FImageUnload(FImage* Image);
 
+/*==================/ Math Manager /===================*/
+ENGINE_API float FAbs(float Value);
+ENGINE_API float FClamp(float Value, float Min, float Max);
+
 /*==================/ Matrix Manager /===================*/
 ENGINE_API FMat4 FMat4Identity();
 ENGINE_API FMat4 FMat4MakePerspective(float Fov, float Aspect, float ZNear, float ZFar);
@@ -59,6 +63,9 @@ ENGINE_API FVector2 FVector2Normalize(FVector2 Self);
 ENGINE_API float FVector2Length(FVector2 Self);
 ENGINE_API float FVector2Dot(FVector2 Self, FVector2 Other);
 ENGINE_API float FVector2Cross(FVector2 Self, FVector2 Other);
+ENGINE_API FVector2 FVector2ClampField(FVector2 Self, float Min, float Max);
+ENGINE_API FVector2 FVector2ClampLength(FVector2 Self, float Min, float Max);
+ENGINE_API FVector2 FVector2Abs(FVector2 Self);
 
 /*==================/ Vector 3D Manager /===================*/
 ENGINE_API FVector3 FVector3Add(FVector3 Self, FVector3 Other);
@@ -73,3 +80,6 @@ ENGINE_API FVector3 FVector3Normalize(FVector3 Self);
 ENGINE_API FVector3 FVector3Cross(FVector3 Self, FVector3 Other);
 ENGINE_API float FVector3Length(FVector3 Self);
 ENGINE_API float FVector3Dot(FVector3 Self, FVector3 Other);
+ENGINE_API FVector3 FVector3ClampField(FVector3 Self, float Min, float Max);
+ENGINE_API FVector3 FVector3ClampLength(FVector3 Self, float Min, float Max);
+ENGINE_API FVector3 FVector3Abs(FVector3 Self);

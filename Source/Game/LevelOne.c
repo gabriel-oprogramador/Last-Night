@@ -1,33 +1,24 @@
 #include "Game.h"
 #include "GameFramework.h"
 
-static APlayer SPlayer;
-static AEnemy SEnemy[2];
+static USprite* SPlayerSpr;
 
 static void LevelInit() {
   FCaptureMouse(true);
-  SPlayer = APlayerCreate();
-  SEnemy[0] = AEnemyCreate();
-  SEnemy[1] = AEnemyCreate();
-
-  USpriteSetLocation(SEnemy[1].sprite, VEC3(FGetScreenWidth()/2, FGetScreenHeight()/2, 2));
+  SPlayerSpr = PlayerCreate();
 }
 
 static void LevelStart() {
 }
 
 static void LevelUpdate(float DeltaTime) {
-  float dt = DeltaTime;
-
-  // Update...
-  APlayerUpdate(&SPlayer, dt);
+  PlayerController(SPlayerSpr);
 
   USpriteUpdateArena();
   USpriteRenderArena();
 }
 
 static void LevelStop() {
-  APlayerDestroy(&SPlayer);
 }
 
 FLevel FLevelOneOpen() {

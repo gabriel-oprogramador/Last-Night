@@ -11,7 +11,7 @@ typedef struct {
   void (*OnStop)();
 } FLevel;
 
-typedef enum{
+typedef enum {
   E_TAG_NONE,
   E_TAG_PLAYER,
   E_TAG_ENEMY,
@@ -19,12 +19,11 @@ typedef enum{
 } EGameTags;
 
 typedef enum {
-  E_PLAYER_NORMAL_IDLE,
-  E_PLAYER_NORMAL_WALK,
-  E_PLAYER_NORMAL_CROUCH,
-  E_PLAYER_FIRE_IDLE,
-  E_PLAYER_FIRE_WALK,
-  E_PLAYER_FIRE_CROUCH,
+  E_PLAYER_STATE_NORMAL = 0,
+  E_PLAYER_STATE_WALK = 1,
+  E_PLAYER_STATE_CROUCH = 2,
+  E_PLAYER_STATE_FIRE = 3,
+  E_PLAYER_STATE_DEAD = 6,
 } EPlayerAnimState;
 
 typedef enum {
@@ -48,36 +47,5 @@ typedef struct {
   ESpaceType types[MAX_SPACE];
 } AFloor;
 
-typedef struct {
-  USprite* sprite;
-  FVector3 direction;
-  float healt;
-  float speed;
-  bool bCrouch;
-  bool bEquiped;
-} APlayer;
-
-typedef struct{
-  USprite* sprite;
-  float speed;
-  bool bActive;
-} AEnemy;
-
-typedef struct {
-  USprite* sprite;
-  FVector3 direction;
-  float speed;
-  bool bActive;
-} AProjectile;
-
-ENGINE_API APlayer APlayerCreate();
-ENGINE_API void APlayerUpdate(APlayer* Self, float DeltaTime);
-ENGINE_API void APlayerDestroy(APlayer* Self);
-
-ENGINE_API AEnemy AEnemyCreate();
-ENGINE_API void AEnemyUpdate(AEnemy* Self, float DeltaTime);
-ENGINE_API void AEnemyDestroy(AEnemy* Self);
-
-ENGINE_API AProjectile AProjectileCreate();
-ENGINE_API void AProjectileUpdate(AProjectile* Self, float DeltaTime);
-ENGINE_API void AProjectileDestroy(AProjectile* Self);
+ENGINE_API USprite* PlayerCreate();
+ENGINE_API void PlayerController(USprite* Self);

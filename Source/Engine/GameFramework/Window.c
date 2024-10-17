@@ -3,6 +3,7 @@
 #include "GT/Renderer.h"
 
 static FRect SScreeSpace = {.x = 0, .y = 0, .width = 1920, .height = 1080};
+/*static FRect SScreeSpace = {.x = -960, .y  c= -540, .width = 1920, .height = 1080};*/
 
 void FInitWindow(int32 Width, int32 Height, cstring Title) {
   if(GEngine.mainWindow.pWindow != NULL) {

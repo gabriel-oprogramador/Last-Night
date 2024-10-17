@@ -14,6 +14,7 @@ typedef struct {
 } UBoxCollider;
 
 typedef struct {
+  bool bLoop;
   int32 currentFrame;
   int32 currentRow;
   int32 totalFrames;
@@ -32,15 +33,26 @@ typedef struct {
   bool bDirty;
 } UTransform;
 
+typedef struct{
+  FVector3 direction;
+  FVector3 velocity;
+  FVector3 forward;
+  FVector3 right;
+  FVector3 up;
+  float maxSpeed;
+} UMovement;
+
 typedef struct {
   UTransform transform;
   UAnimator animator;
   UBoxCollider collider;
+  UMovement movement;
   FTexture texture;
   FAnchor anchor;
   FRect spriteRect;
   uint32 tag;
   int32 id;
+  bool bInvertible;
   bool bAnimation;
   bool bHidden;
 } USprite;
@@ -50,9 +62,11 @@ ENGINE_API void USpriteUpdateArena();
 ENGINE_API void USpriteCheckCollisionArena();
 ENGINE_API void USpriteRenderArena();
 ENGINE_API void USpriteDestroyArena();
-ENGINE_API uint32 USpriteAdd(USprite* Self);
-ENGINE_API void USpriteRemove(uint32 SpriteID);
-ENGINE_API USprite* USpriteGet(uint32 SpriteID);
+
+ENGINE_API USprite* USpriteAdd(USprite* Self);
+ENGINE_API void USpriteRemove(USprite* Self);
+ENGINE_API void USpriteRemoveID(int32 SpriteID);
+ENGINE_API USprite* USpriteGet(int32 SpriteID);
 
 ENGINE_API USprite USpriteCreate(cstring TexturePath);
 ENGINE_API void USpriteDestroy(USprite* Self);
@@ -81,3 +95,6 @@ ENGINE_API FVector3 USpriteGetAnchorLacation(USprite* Self);
 
 ENGINE_API bool USpriteIsCollisionSprite(USprite* Self, USprite* Other);
 ENGINE_API bool USpriteIsCollisionPointer(USprite* Self, FVector2 Pointer);
+
+ENGINE_API void USpriteAddMovement(USprite* Self, FVector3 Direction);
+ENGINE_API void USpriteStopMovement(USprite* Self);

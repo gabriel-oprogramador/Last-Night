@@ -81,3 +81,29 @@ float FVector3Length(FVector3 Self) {
 float FVector3Dot(FVector3 Self, FVector3 Other) {
   return Self.x * Other.x + Self.y * Other.y + Self.z * Other.z;
 }
+
+FVector3 FVector3ClampField(FVector3 Self, float Min, float Max) {
+  Self.x = FClamp(Self.x, Min, Max);
+  Self.y = FClamp(Self.y, Min, Max);
+  Self.z = FClamp(Self.z, Min, Max);
+  return Self;
+}
+
+FVector3 FVector3ClampLength(FVector3 Self, float Min, float Max) {
+  float length = FVector3Length(Self);
+  if(length < Min) {
+    Self = FVector3Normalize(Self);
+    Self = FVector3MulS(Self, Min);
+  } else if(length > Max) {
+    Self = FVector3Normalize(Self);
+    Self = FVector3MulS(Self, Max);
+  }
+  return Self;
+}
+
+FVector3 FVector3Abs(FVector3 Self) {
+  Self.x = FAbs(Self.x);
+  Self.y = FAbs(Self.y);
+  Self.z = FAbs(Self.z);
+  return Self;
+}
