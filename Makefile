@@ -41,6 +41,8 @@ ifeq ($(OS), Windows_NT)
 	KIND = -mwindows
 	LIBS =
 	LIBS_PATH =
+	RC_COMPILE = windres Source/Engine/Resource.rc -o $(OBJ_OUTPUT)/Resource.o
+	RC_LINK = $(OBJ_OUTPUT)/Resource.o
 else ifeq ($(shell uname), Linux)
 	DEFINES += -DPLATFORM_LINUX
 	CFLAGS += -std=gnu99
@@ -48,6 +50,8 @@ else ifeq ($(shell uname), Linux)
 	PLATFORM = Linux
 	LIBS = -lm
 	LIBS_PATH =
+	RC_COMPILE =
+	RC_LINK =
 endif
 
 config = debug
@@ -125,7 +129,8 @@ rebuild: clean run
 # Linker Target //================================================//
 $(GAME): install $(OBJ)
 	@echo 'Linking -> $(BIN_OUTPUT)/$(GAME)$(EXTENSION)'
-	@$(CXX) $(KIND) $(OBJ) $(FLAGS) $(LIBS_PATH) $(LIBS) -o$(BIN_OUTPUT)/$(GAME)$(EXTENSION)
+	@$(RC_COMPILE)
+	@$(CXX) $(RC_LINK) $(KIND) $(OBJ) $(FLAGS) $(LIBS_PATH) $(LIBS) -o$(BIN_OUTPUT)/$(GAME)$(EXTENSION)
 	@$(CLANG_GENERATOR_CC)
 	@$(MAKE_PACKAGE)
 

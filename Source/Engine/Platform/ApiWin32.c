@@ -98,8 +98,9 @@ void ApiWin32CreateWindow(int32 Width, int32 Height, cstring Title, uint32 Mode)
     wc.style = CS_OWNDC;
     wc.lpfnWndProc = &InternalWinProc;
     wc.hInstance = hInstance;
-    wc.hIcon = SApiUser.LoadIconA(NULL, IDI_APPLICATION);
-    wc.hCursor = SApiUser.LoadCursorA(NULL, IDC_ARROW);
+    wc.hIcon = SApiUser.LoadIconA(hInstance, MAKEINTRESOURCE(101));
+    wc.hIconSm = SApiUser.LoadIconA(hInstance, MAKEINTRESOURCE(101));
+    wc.hCursor = SApiUser.LoadCursorA(hInstance, IDC_ARROW);
     wc.lpszClassName = className;
 
     if(!SApiUser.RegisterClassExA(&wc)) {
