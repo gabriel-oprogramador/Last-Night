@@ -1,8 +1,8 @@
 #pragma once
 #include "Components.h"
 
-#define MAX_SPACE 7
-#define MAX_FLOOR 6
+#define MAX_SPACE 10
+#define MAX_FLOOR 10
 
 typedef struct {
   void (*OnInit)();
@@ -43,8 +43,10 @@ typedef enum {
 } ESpaceType;
 
 typedef struct {
-  USprite spacesSpr[MAX_SPACE];
+  USprite* spacesSpr[MAX_SPACE];
   ESpaceType types[MAX_SPACE];
+  uint32 inDoorIndex;
+  uint32 outDoorIndex;
 } AFloor;
 
 ENGINE_API USprite* PlayerCreate();
