@@ -9,6 +9,8 @@
 static FPrimitive SQuad;
 static FShader SShaderID;
 static bool SbQuadIsValid = false;
+static bool SbDebugMode = false;
+
 static struct {
   uint32 uProjID;
   uint32 uModelID;
@@ -22,6 +24,10 @@ static struct {
   uint32 numSprites;
   uint32 numfreeSlots;
 } SSpriteManager;
+
+void USpriteEnableDebugMode(bool bDebugMode) {
+  SbDebugMode = bDebugMode;
+}
 
 void USpriteCreateArena() {
   SSpriteManager.numSprites = 0;
@@ -39,7 +45,7 @@ void USpriteUpdateArena() {
     FVector3 finalLocation = VEC3_ZERO;
     FVector3 finalScale = VEC3_ONE;
 
-    if(spr->id == -1) { continue; }
+    if(spr->bActive == false) { continue; }
 
     if(spr->bAnimation) {
       animator->elapsedTime += dt;
@@ -88,18 +94,15 @@ void USpriteUpdateArena() {
 }
 
 void USpriteCheckCollisionArena() {
-  for(int32 c = 0; c < SSpriteManager.numSprites; c++) {
+  for(int32 c = 0; c < MAX_ARENA_SIZE; c++) {
     USprite* self = &SSpriteManager.sprites[c];
 
+    if(self->bActive == false || self->collider.type == E_WORLD_STATIC) { continue; }
     if(self->collider.bCollisionEnable == false) { continue; }
 
-    if(self->collider.type == E_WORLD_STATIC || self->id == -1) {
-      continue;
-    }
-
-    for(int32 d = c + 1; d < SSpriteManager.numSprites; d++) {
+    for(int32 d = 0; d < MAX_ARENA_SIZE; d++) {
       USprite* other = &SSpriteManager.sprites[d];
-      if(other->collider.bCollisionEnable == false) { continue; }
+      if(other->bActive == false || other->collider.bCollisionEnable == false || c == d) { continue; }
 
       if(USpriteIsCollisionSprite(self, other)) {
         if(self->collider.onCollision != NULL) { self->collider.onCollision(self, other); }
@@ -160,19 +163,34 @@ void USpriteRenderArena() {
     glBindVertexArray(0);
     glUseProgram(0);
 
-    // For Debug...
-    FColor quadColor = COLOR_YELLOW;
-    quadColor.a = 0.33f;
-    if(spr->collider.bDraw) {
+#ifdef DEBUG_MODE
+    spr->collider.debugColor.a = 0.33f;
+    if(spr->collider.bDraw || SbDebugMode) {
       FVector3 size = FVector3MulS(spr->transform.scale, 2.5f);
-      FDrawQuad(spr->collider.location, spr->collider.scale, quadColor);
       FDrawCircle(spr->collider.location, size, COLOR_PURPLE);
       FDrawCircle(spr->transform.location, size, COLOR_RED);
     }
+#endif  // DEBUG_MODE
   }
+
+#ifdef DEBUG_MODE
+  for(int32 c = 0; c < MAX_ARENA_SIZE; c++) {
+    UBoxCollider* box = &SSpriteManager.sprites[c].collider;
+    if(box->bDraw)
+      FDrawQuad(box->location, box->scale, box->debugColor);
+  }
+#endif  // DEBUG_MODE
 }
 
 void USpriteDestroyArena() {
+  for(int32 c = 0; c < MAX_ARENA_SIZE; c++) {
+    USprite* spr = &SSpriteManager.sprites[c];
+    FTextureUnload(spr->texture);
+  }
+  PMemSet(SSpriteManager.sprites, 0, sizeof(SSpriteManager.sprites));
+  PMemSet(SSpriteManager.freeList, 0, sizeof(SSpriteManager.freeList));
+  SSpriteManager.numSprites = 0;
+  SSpriteManager.numfreeSlots = 0;
 }
 
 USprite* USpriteAdd(USprite* Self) {
@@ -234,10 +252,11 @@ USprite USpriteCreate(cstring TexturePath) {
   self.transform.rotation = ROT_ZERO;
   self.transform.scale = VEC3_ONE;
   self.transform.bDirty = true;
+  self.bActive = true;
   self.bHidden = false;
   self.bAnimation = false;
   self.movement.velocity = VEC3_ZERO;
-  self.movement.direction = VEC3(1, 0, 0);
+  self.movement.direction = VEC3(1, 1, 0);
   self.movement.maxSpeed = 300.f;
   self.animator.currentFrame = 0;
   self.animator.currentRow = 0;
@@ -246,6 +265,7 @@ USprite USpriteCreate(cstring TexturePath) {
   self.animator.bLoop = true;
   self.animator.frameTime = 0.f;
   self.animator.elapsedTime = 0.f;
+  self.collider.debugColor = COLOR_YELLOW;
   USpriteLoadTexture(&self, TexturePath);
   return self;
 }
@@ -380,6 +400,10 @@ FVector3 USpriteGetAnchorLacation(USprite* Self) {
   return Self->anchor.location;
 }
 
+FVector3 USpriteGetAnchorOffset(USprite* Self){
+  return Self->anchor.offset;
+}
+
 bool USpriteIsCollisionSprite(USprite* Self, USprite* Other) {
   UBoxCollider* boxSelf = &Self->collider;
   UBoxCollider* boxOther = &Other->collider;
@@ -417,6 +441,26 @@ bool USpriteIsCollisionPointer(USprite* Self, FVector2 Pointer) {
   return false;
 }
 
+void USpriteFlipX(USprite* Self) {
+  Self->movement.direction.x *= -1;
+}
+
+void USpriteFlipY(USprite* Self) {
+  Self->movement.direction.y *= -1;
+}
+
+FVector3 USpriteGetDirection(USprite* Self) {
+  return Self->movement.direction;
+}
+
+FVector3 USpriteGetVelocity(USprite* Self) {
+  return Self->movement.velocity;
+}
+
+float USpriteGetVelocityLength(USprite* Self) {
+  return FVector3Length(Self->movement.velocity);
+}
+
 void USpriteAddMovement(USprite* Self, FVector3 Direction) {
   Direction = FVector3Normalize(Direction);
   FVector3 velocity = FVector3MulS(Direction, Self->movement.maxSpeed * FGetDeltaTime());
@@ -425,6 +469,6 @@ void USpriteAddMovement(USprite* Self, FVector3 Direction) {
   Self->transform.bDirty = true;
 }
 
-void USpriteStopMovement(USprite* Self){
+void USpriteStopMovement(USprite* Self) {
   Self->movement.velocity = VEC3_ZERO;
 }

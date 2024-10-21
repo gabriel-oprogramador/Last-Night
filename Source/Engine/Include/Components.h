@@ -9,6 +9,7 @@ typedef struct {
   FVector3 location;
   FVector3 offset;
   FVector3 scale;
+  FColor debugColor;
   bool bCollisionEnable;
   bool bDraw;
 } UBoxCollider;
@@ -55,8 +56,10 @@ typedef struct {
   bool bInvertible;
   bool bAnimation;
   bool bHidden;
+  bool bActive;
 } USprite;
 
+ENGINE_API void USpriteEnableDebugMode(bool bDebugMode);
 ENGINE_API void USpriteCreateArena();
 ENGINE_API void USpriteUpdateArena();
 ENGINE_API void USpriteCheckCollisionArena();
@@ -92,9 +95,16 @@ ENGINE_API void USpriteInitAnimator(USprite* Self, uint32 Frame, uint32 Row, uin
 ENGINE_API void USpriteAddAnchorOffset(USprite* Self, FVector3 Offset);
 ENGINE_API void USpriteSetAnchorType(USprite* Self, EAnchorType Type);
 ENGINE_API FVector3 USpriteGetAnchorLacation(USprite* Self);
+ENGINE_API FVector3 USpriteGetAnchorOffset(USprite* Self);
 
 ENGINE_API bool USpriteIsCollisionSprite(USprite* Self, USprite* Other);
 ENGINE_API bool USpriteIsCollisionPointer(USprite* Self, FVector2 Pointer);
 
+ENGINE_API void USpriteFlipX(USprite* Self);
+ENGINE_API void USpriteFlipY(USprite* Self);
+
+ENGINE_API FVector3 USpriteGetDirection(USprite* Self);
+ENGINE_API FVector3 USpriteGetVelocity(USprite* Self);
+ENGINE_API float USpriteGetVelocityLength(USprite* Self);
 ENGINE_API void USpriteAddMovement(USprite* Self, FVector3 Direction);
 ENGINE_API void USpriteStopMovement(USprite* Self);

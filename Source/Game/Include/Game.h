@@ -15,7 +15,10 @@ typedef enum {
   E_TAG_NONE,
   E_TAG_PLAYER,
   E_TAG_ENEMY,
+  E_TAG_IN_DOOR,
   E_TAG_PROJECTILE,
+  E_TAG_ENEMY_DOOR,
+  E_TAG_TRIDENT,
 } EGameTags;
 
 typedef enum {
@@ -27,27 +30,38 @@ typedef enum {
 } EPlayerAnimState;
 
 typedef enum {
+  E_ENEMY_STATE_IDLE = 0,
+  E_ENEMY_STATE_WALK = 1,
+  E_ENEMY_STATE_DEAD = 2,
+} EEnemyAnimState;
+
+typedef enum {
   E_PROP_WALL,
-  E_PROP_OPEN_DOOR,
   E_PROP_CLOSED_DOOR,
+  E_PROP_CLOSED_ENEMY,
+  E_PROP_OPEN_DOOR,
   E_PROP_MAX,
 } EPropType;
 
-typedef enum {
-  E_SPACE_WALL,
-  E_SPACE_CLOSED_DOOR,
-  E_SPACE_IN_DOOR,
-  E_SPACE_OUT_DOOR,
-  E_SPACE_ENEMY_DOOR,
-  E_SPACE_MAX
-} ESpaceType;
-
 typedef struct {
   USprite* spacesSpr[MAX_SPACE];
-  ESpaceType types[MAX_SPACE];
   uint32 inDoorIndex;
   uint32 outDoorIndex;
+  uint32 enemyDoorIndex;
 } AFloor;
+
+typedef struct{
+  uint32 enemyDeaths;
+  uint32 playerHealt;
+} AGameState;
+
+ENGINE_API AGameState GGameState;
 
 ENGINE_API USprite* PlayerCreate();
 ENGINE_API void PlayerController(USprite* Self);
+
+ENGINE_API USprite* EnemyCreate();
+ENGINE_API void EnemyReset(USprite* Self, FVector3 Location);
+ENGINE_API void EnemyDeath(USprite* Self);
+ENGINE_API void EnemyController(USprite* Self);
+ENGINE_API void EnemyChasePlayer(USprite* Self, USprite* Player);

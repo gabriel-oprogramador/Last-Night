@@ -5,14 +5,14 @@
 // Engine Entrypoint
 int GTmain(int argc, const char** argv) {
   const float ASPECT = 1.7777;
-  const int32 WIDTH = 800;
+  const int32 WIDTH = 1366;
   const int32 HEIGHT = WIDTH / ASPECT;
 
   FEngineInitialize(0, argv);
   FSetTargetFPS(60);
 
   FInitWindow(WIDTH, HEIGHT, STR(GAME_NAME));
-  FSetClearColor(COLOR_GRAY);
+  FSetClearColor(COLOR_BLACK);
 
   FEngineMainLoop();
 
